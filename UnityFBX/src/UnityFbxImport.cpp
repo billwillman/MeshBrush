@@ -9,6 +9,11 @@ static FbxManager* m_pSdkMgr = NULL;
 static FbxIOSettings* m_pSettings = NULL;
 static FbxScene* m_pScene = NULL;
 
+#ifdef IOS_REF
+#undef  IOS_REF
+#define IOS_REF (*(m_pSdkMgr->GetIOSettings()))
+#endif
+
 //
 	// 初始化FBX环境
 	bool InitFbxSdkEnv()
@@ -43,4 +48,52 @@ static FbxScene* m_pScene = NULL;
 			m_pSdkMgr->Destroy();
 			m_pSdkMgr = NULL;
 		}
+	}
+
+	bool LoadScene(const char* fileName)
+	{
+		if (!fileName)
+			return false;
+		int lFileMajor, lFileMinor, lFileRevision;
+		int lSDKMajor, lSDKMinor, lSDKRevision;
+		int lAnimStackCount;
+		int i;
+		bool lStatus;
+
+		FbxManager::GetFileFormatVersion(lSDKMajor, lSDKMinor, lSDKRevision);
+		FbxImporter* lImporter = FbxImporter::Create(m_pSdkMgr, "UnityFbxImport");
+		const bool lImportStatus = lImporter->Initialize(fileName, -1, m_pSdkMgr->GetIOSettings());
+		lImporter->GetFileVersion(lFileMajor, lFileMinor, lFileRevision);
+		if (!lImportStatus)
+		{
+			return false;
+		}
+
+		if (lImporter->IsFBX())
+		{
+			lAnimStackCount = lImporter->GetAnimStackCount();
+			for (i = 0; i < lAnimStackCount; i++)
+			{
+				FbxTakeInfo* lTakeInfo = lImporter->GetTakeInfo(i);
+			}
+
+			IOS_REF.SetBoolProp(IMP_FBX_MATERIAL, true);
+			IOS_REF.SetBoolProp(IMP_FBX_TEXTURE, true);
+			IOS_REF.SetBoolProp(IMP_FBX_LINK, true);
+			IOS_REF.SetBoolProp(IMP_FBX_SHAPE, true);
+			IOS_REF.SetBoolProp(IMP_FBX_GOBO, true);
+			IOS_REF.SetBoolProp(IMP_FBX_ANIMATION, true);
+			IOS_REF.SetBoolProp(IMP_FBX_GLOBAL_SETTINGS, true);
+		}
+
+		lStatus = lImporter->Import(m_pScene);
+
+		if (lStatus == false && lImporter->GetStatus().GetCode() == FbxStatus::ePasswordError)
+		{
+			return false;
+		}
+
+		lImporter->Destroy();
+
+		return true;
 	}
