@@ -19,4 +19,5 @@ extern"C"
 	EXPORTS_U3DDLL bool InitFbxSdkEnv();
 	EXPORTS_U3DDLL void UnInitFbxSdk();
 	EXPORTS_U3DDLL bool LoadScene(const char* fileName);
+	EXPORTS_U3DDLL bool SaveScene(const char* pFilename, int pFileFormat, bool pEmbedMedia);
 }

@@ -97,5 +97,64 @@ static FbxScene* m_pScene = NULL;
 
 		lImporter->Destroy();
 
-		return true;
+		return lStatus;
+	}
+
+	bool SaveScene(const char* pFilename, int pFileFormat, bool pEmbedMedia)
+	{
+		int lMajor, lMinor, lRevision;
+		bool lStatus = true;
+
+		// Create an exporter.
+		FbxExporter* lExporter = FbxExporter::Create(m_pSdkMgr, "UnityFbxExport");
+
+		if (pFileFormat < 0 || pFileFormat >= m_pSdkMgr->GetIOPluginRegistry()->GetWriterFormatCount())
+		{
+			// Write in fall back format in less no ASCII format found
+			pFileFormat = m_pSdkMgr->GetIOPluginRegistry()->GetNativeWriterFormat();
+
+			//Try to export in ASCII if possible
+			int lFormatIndex, lFormatCount = m_pSdkMgr->GetIOPluginRegistry()->GetWriterFormatCount();
+
+			for (lFormatIndex = 0; lFormatIndex<lFormatCount; lFormatIndex++)
+			{
+				if (m_pSdkMgr->GetIOPluginRegistry()->WriterIsFBX(lFormatIndex))
+				{
+					FbxString lDesc = m_pSdkMgr->GetIOPluginRegistry()->GetWriterFormatDescription(lFormatIndex);
+					const char *lASCII = "ascii";
+					if (lDesc.Find(lASCII) >= 0)
+					{
+						pFileFormat = lFormatIndex;
+						break;
+					}
+				}
+			}
+		}
+
+		// Set the export states. By default, the export states are always set to 
+		// true except for the option eEXPORT_TEXTURE_AS_EMBEDDED. The code below 
+		// shows how to change these states.
+		IOS_REF.SetBoolProp(EXP_FBX_MATERIAL, true);
+		IOS_REF.SetBoolProp(EXP_FBX_TEXTURE, true);
+		IOS_REF.SetBoolProp(EXP_FBX_EMBEDDED, pEmbedMedia);
+		IOS_REF.SetBoolProp(EXP_FBX_SHAPE, true);
+		IOS_REF.SetBoolProp(EXP_FBX_GOBO, true);
+		IOS_REF.SetBoolProp(EXP_FBX_ANIMATION, true);
+		IOS_REF.SetBoolProp(EXP_FBX_GLOBAL_SETTINGS, true);
+
+		// Initialize the exporter by providing a filename.
+		if (lExporter->Initialize(pFilename, pFileFormat, m_pSdkMgr->GetIOSettings()) == false)
+		{
+			lExporter->Destroy();
+			return false;
+		}
+
+		FbxManager::GetFileFormatVersion(lMajor, lMinor, lRevision);
+
+		// Export the scene.
+		lStatus = lExporter->Export(m_pScene);
+
+		// Destroy the exporter.
+		lExporter->Destroy();
+		return lStatus;
 	}
