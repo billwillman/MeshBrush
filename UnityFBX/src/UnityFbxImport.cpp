@@ -66,6 +66,7 @@ static FbxScene* m_pScene = NULL;
 		lImporter->GetFileVersion(lFileMajor, lFileMinor, lFileRevision);
 		if (!lImportStatus)
 		{
+			lImporter->Destroy();
 			return false;
 		}
 
@@ -90,6 +91,7 @@ static FbxScene* m_pScene = NULL;
 
 		if (lStatus == false && lImporter->GetStatus().GetCode() == FbxStatus::ePasswordError)
 		{
+			lImporter->Destroy();
 			return false;
 		}
 
